@@ -1,6 +1,7 @@
 {
   "name": "my-weather-app",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -12,6 +13,11 @@
   "license": "ISC",
   "dependencies": {
     "apollo-datasource-rest": "^3.7.0",
-    "apollo-server": "^3.11.1"
+    "apollo-server": "^3.11.1",
+    "graphql": "^16.6.0",
+    "graphql-tools": "^8.3.18",
+    "node-fetch": "^3.3.0",
+    "sequelize": "^6.28.0",
+    "sqlite3": "^5.1.4"
   }
 }

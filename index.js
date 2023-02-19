@@ -1,14 +1,26 @@
-const { ApolloServer } = require("apollo-server");
-const { RESTDataSource } = require("apollo-datasource-rest");
+import { ApolloServer, gql } from "apollo-server";
+import { RESTDataSource } from "apollo-datasource-rest"
+import { Sequelize, DataTypes } from 'sequelize';
+import { makeExecutableSchema } from 'graphql-tools';
+import fetch from 'node-fetch';
+import readFileSync from 'fs';
+import buildSchema from 'graphql';
+import { resolve } from 'path';
 
-class WeatherAPI extends RESTDataSource {
+
+const NASA_KEY = 'B5A0xnkRpcwt8awTgWYeBA68Id82NYc1xbaNy5RY';
+const NEW_WEATHERAPI_KEY = 'cfe59a0f372b45ca945120624231802';
+const VISUALCROSSING = '6C3N39FWNB3VLTL9DZYX9PXSA'
+
+
+class visualCrossingAPI extends RESTDataSource {
     constructor() {
         super();
-        this.baseURL = "http://api.openweathermap.org/data/2.5/";
+        this.baseURL = 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/'
     }
-
-    async getWeather(city, apiKey) {
-        return this.get(`weather?q=${city}&appid=${apiKey}`);
+    async getVisualCrossing(latitude, longitude, VISUALCROSSING) {
+        this.VISUALCROSSING = VISUALCROSSING;
+        return this.get(`${latitude},${longitude}?key=6C3N39FWNB3VLTL9DZYX9PXSA`)
     }
 }
 
@@ -23,38 +35,46 @@ class StarWarsAPI extends RESTDataSource {
     }
 }
 
-class PokemonAPI extends RESTDataSource {
+class NasaAPI extends RESTDataSource {
     constructor() {
         super();
-        this.baseUrl = "https://pokeapi.co/api/v2/";
+        this.baseURL = "https://api.nasa.gov/planetary/apod?api_key=${NASA_KEY}"
     }
-    async getPokemon(id) {
-        return this.get(`pokemon/${id}`)
+    async getAPOD() {
+        return this.get(`apod?api_key=${NASA_KEY}`)
     }
 }
 
-class NasaAPI extends RESTDataSource{
-    constructor(){
+class TimeZoneAPI extends RESTDataSource{
+    constructor() {
         super();
-        this.baseURL="https://api.nasa.gov/planetary/";
+        this.baseURL = "https://www.timeapi.io/api/TimeZone/"
+        
     }
-    async getAPOD(date){
-        return this.get(`apod?/${date}api_key=${DEMO_KEY}`)
+    async getTimeZone(tzone) {
+        return this.get(`zone?timeZone=${tzone}`)
     }
 }
+
+const fetchTzone = async(tzone)=>{
+    console.log("hier")
+    const response = await fetch(`https://www.timeapi.io/api/TimeZone/zone?timeZone=America/New_York`)
+    console.log(response);
+    const data = await response.json();
+    return data;
+}
+
+
 
 const typeDefs = `
-  type Weather {
-    main: String
-    description: String
-  }
-
   type Query {
-    weather(city: String!, apiKey: String!): Weather
     person(id: ID!): Person
-    pokemons(name: String!):[Pokemon]
-    pokemon(id:ID!): Pokemon
-    apod(date: String!, apiKey: String!): APOD
+    apod(apiKey: String!): APOD
+    visualCrossing(latitude: Float, longitude: Float): VisualCrossing
+    tzone(tzone: String!): Tzone
+  }
+  type Mutation {
+    createPerson(input: CreatePersonInput!): Person!
   }
 
   type Person {
@@ -68,40 +88,104 @@ const typeDefs = `
     birth_year: String
     gender: String
   }
+  
+  type VisualCrossing{
+    queryCost: Int
+    latitude: Float
+    longitude: Float
+    resolvedAddress: String
+    address: String
+    timezone: String
+    tzoffset: Int
+    description: String
+    tzone: Tzone
+  }
 
   type APOD {
-    date: String!
+    date: String
     explanation: String
     title: String
     url: String
   }
 
-  type Pokemon {
-    id: ID
-    name: String!
-    types: [String]
-    height: Float
-    weight: Float
+  type Tzone {
+    timeZone: String
+    currentLocalTime: String
+    currentUtcOffset: TimeOffset
+    standardUtcOffset: TimeOffset
+    hasDayLightSaving: Boolean
+    isDayLightSavingActive: Boolean
+    dstInterval: DSTInterval
+  }
+  
+  type TimeOffset {
+    seconds: Float
+    milliseconds: Float
+    ticks: Float
+    nanoseconds: Float
+  }
+  
+  type DSTInterval {
+    dstName: String
+    dstOffsetToUtc: TimeOffset
+    dstOffsetToStandardTime: TimeOffset
+    dstStart: String
+    dstEnd: String
+    dstDuration: Duration
+  }
+  
+  type Duration {
+    days: Int
+    nanosecondOfDay: Int
+    hours: Int
+    minutes: Int
+    seconds: Int
+    milliseconds: Int
+    subsecondTicks: Int
+    subsecondNanoseconds: Int
+    bclCompatibleTicks: Float
+    totalDays: Int
+    totalHours: Int
+    totalMinutes: Int
+    totalSeconds: Int
+    totalMilliseconds: Int
+    totalTicks: Int
+    totalNanoseconds: Int
+  }
+
+  input CreatePersonInput {
+    name: String
+    height: String
   }
 `;
 
 const resolvers = {
     Query: {
-        weather: (root, { city, apiKey }, { dataSources }) => {
-            return dataSources.weatherAPI.getWeather(city, apiKey);
-        },
-        person: (root, { id }, { dataSources }) => {
+        person: (_root, { id }, { dataSources }) => {
             return dataSources.starWarsAPI.getPerson(id);
         },
-        pokemon: (root, { id }, { dataSources }) => {
-            return dataSources.PokemonAPI.getPokemon(id);
+        apod: (_root, { NASA_KEY }, { dataSources }) => {
+            return dataSources.NasaAPI.getAPOD();
         },
-        pokemons: (root, { name }, { dataSources }) => {
-            return dataSources.PokemonAPI.getPokemon(id);
+        visualCrossing:(_root, { latitude, longitude }, { dataSources }) => {
+            return dataSources.visualCrossingAPI.getVisualCrossing(latitude, longitude);
         },
-        apod: (root, { date, DEMO_KEY }, { dataSources})=> {
-            return dataSources.NasaAPI.getAPOD(date);
+        tzone: (_root, { tzone }, { dataSources }) => {
+            return dataSources.timeZoneAPI.getTimeZone(tzone);
         }
+    }, VisualCrossing:{
+        tzone: async(parent)=>{
+            const {tzone} = parent;
+            const tzoneData = await fetchTzone(tzone)
+            return tzoneData;
+        },
+    },
+    Mutation: {
+        createPerson: async (_parent, { input }, _context) => {
+            const { name, height } = input;
+            const newPerson = await Person.create({ name, height });
+            return newPerson;
+        },
     }
 };
 
@@ -109,9 +193,10 @@ const server = new ApolloServer({
     typeDefs,
     resolvers,
     dataSources: () => ({
-        weatherAPI: new WeatherAPI(),
         starWarsAPI: new StarWarsAPI(),
-        PokemonAPI: new PokemonAPI(),
+        NasaAPI: new NasaAPI(),
+        visualCrossingAPI: new visualCrossingAPI(),
+        timeZoneAPI: new TimeZoneAPI(),
     }),
 });
 

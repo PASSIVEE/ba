@@ -1,0 +1,131 @@
+ type Weather {
+    main: String
+    description: String
+  }
+  
+  type Query {
+    weather(city: String!, apiKey: String!): Weather
+    person(id: ID!): Person
+    pokemons(name: String!):[Pokemon]
+    pokemon(id:ID!): Pokemon
+    apod(apiKey: String!): APOD
+    location(apiKey: String!, name: String!): Location
+    city(cityName: String): City
+    visualCrossing(latitude: Float, longitude: Float): VisualCrossing
+    image(lon: Float, lat: Float): Image
+    tzone(tzone: String!): Tzone
+  }
+  type Mutation {
+    createPerson(input: CreatePersonInput!): Person!
+  }
+
+  type Person {
+    id: ID!
+    name: String
+    height: String
+    mass: String
+    hair_color: String
+    skin_color: String
+    eye_color: String
+    birth_year: String
+    gender: String
+  }
+  
+  type VisualCrossing{
+    queryCost: Int
+    latitude: Float
+    longitude: Float
+    resolvedAddress: String
+    address: String
+    timezone: String
+    tzoffset: Int
+    description: String
+    tzone: Tzone
+  }
+
+  type City {
+    name: String
+    country: String
+    population: Int
+    is_capital: Boolean
+  }
+
+  type Location {
+    name: String
+    region: String
+    country: String
+    lat: Float
+    lon: Float
+  }
+
+  type APOD {
+    date: String
+    explanation: String
+    title: String
+    url: String
+  }
+
+  type Image {
+    lat: Float
+    lon: Float
+    dim: Float
+    url: String
+  }
+
+  type Pokemon {
+    id: ID
+    name: String!
+    types: [String]
+    height: Float
+    weight: Float
+  }
+
+  type Tzone {
+    timeZone: String
+    currentLocalTime: String
+    currentUtcOffset: TimeOffset
+    standardUtcOffset: TimeOffset
+    hasDayLightSaving: Boolean
+    isDayLightSavingActive: Boolean
+    dstInterval: DSTInterval
+  }
+  
+  type TimeOffset {
+    seconds: Float
+    milliseconds: Float
+    ticks: Float
+    nanoseconds: Float
+  }
+  
+  type DSTInterval {
+    dstName: String
+    dstOffsetToUtc: TimeOffset
+    dstOffsetToStandardTime: TimeOffset
+    dstStart: String
+    dstEnd: String
+    dstDuration: Duration
+  }
+  
+  type Duration {
+    days: Int
+    nanosecondOfDay: Int
+    hours: Int
+    minutes: Int
+    seconds: Int
+    milliseconds: Int
+    subsecondTicks: Int
+    subsecondNanoseconds: Int
+    bclCompatibleTicks: Float
+    totalDays: Int
+    totalHours: Int
+    totalMinutes: Int
+    totalSeconds: Int
+    totalMilliseconds: Int
+    totalTicks: Int
+    totalNanoseconds: Int
+  }
+
+  input CreatePersonInput {
+    name: String
+    height: String
+  }
